@@ -1,51 +1,51 @@
 
-    if(document.getElementById("tabla-productos")) {
-        obtenerProductos();
-    }
+if(document.getElementById("tabla-productos")) {
+    obtenerProductos();
+}
 
-    function obtenerProductos() {
-        fetch('http://localhost:8080/app/productos/getProductos', {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
+function obtenerProductos() {
+    fetch('http://localhost:8080/app/productos/getProductos', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+        .then(response => response.text()) // Leer la respuesta como texto
+        .then(text => {
+            try {
+                // Intentar parsear el texto como JSON
+                const result = JSON.parse(text);
+                if (Array.isArray(result) && result.length > 0) {
+                    setTimeout(() => {
+                        llenarTablaProductos(result);
+                    }, 2000);
+                } else {
+                    showAlertModal(result, 'danger', "Producto", true);
+                }
+            } catch (error) {
+                showAlertModal(text, 'danger', "Producto", true);
             }
         })
-            .then(response => response.text()) // Leer la respuesta como texto
-            .then(text => {
-                try {
-                    // Intentar parsear el texto como JSON
-                    const result = JSON.parse(text);
-                    if (Array.isArray(result) && result.length > 0) {
-                        setTimeout(() => {
-                            llenarTablaProductos(result);
-                        }, 2000);
-                    } else {
-                        showAlertModal(result, 'danger', "Producto", true);
-                    }
-                } catch (error) {
-                    showAlertModal(text, 'danger', "Producto", true);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                console.log('Error al obtener productos');
-            });
-    }
+        .catch(error => {
+            console.error('Error:', error);
+            console.log('Error al obtener productos');
+        });
+}
 
 
-    function llenarTablaProductos(productos) {
+function llenarTablaProductos(productos) {
 
-        let texto = "";
+    let texto = "";
 
-        let odd = false;
+    let odd = false;
 
-        let tlpobj = null;
+    let tlpobj = null;
 
-        productos.forEach((value) => {
-            if (odd) { odd = false; clase_par = "par"; }
-            else { odd = true; clase_par = "impar"; }
+    productos.forEach((value) => {
+        if (odd) { odd = false; clase_par = "par"; }
+        else { odd = true; clase_par = "impar"; }
 
-            texto += `<tr data-id="${value.id}">
+        texto += `<tr data-id="${value.id}">
             <td class="${clase_par}" contenteditable="true" data-cod_barras="">${value.cod_barras}</td>
             <td class="${clase_par}" contenteditable="true" data-nombre="">${value.nombre}</td>
             <td class="${clase_par}" data-unidad_medida="">
@@ -71,7 +71,7 @@
                     tlpobj = document.getElementById("input-imagen-${value.id}");
                     actualizarTooltip('${value.imagen_url}', tlpobj.nextElementSibling);
                 </script>
-                <img id="myImg" src="${value.imagen_url}" alt="" onclick="modal(this)">
+                ${value.imagen_url ? `<img id="myImg" src="${value.imagen_url}" alt="" onclick="modal(this)">` : ""}
             </td>
             <td class='able-action-buttons ${clase_par}'>
                 <button class='btn btn-warning btn-sm' title='Modificar' onclick='modificarProducto(${value.id})'>
@@ -82,60 +82,60 @@
                 </button>
             </td>
         </tr>`;
-        });
+    });
 
-        $("#tabla-productos tbody").html(texto);
+    $("#tabla-productos tbody").html(texto);
+}
+
+
+function actualizarTooltip(input, label) {
+    if (label) {
+        label.dataset.tooltip = input;
+    } else {
+        label.dataset.tooltip = "Subir imagen";
     }
+}
+function modal(img) {
 
+    var modal = document.getElementById("modalImage");
+    var modalImg = document.getElementById("imagen-modal");
+    var captionText = document.getElementById("caption");
 
-    function actualizarTooltip(input, label) {
-        if (label) {
-            label.dataset.tooltip = input;
-        } else {
-            label.dataset.tooltip = "Subir imagen";
-        }
+    modal.style.display = "block";
+    modalImg.src = img.src;
+    captionText.innerHTML = img.alt;
+
+    var span = document.getElementsByClassName("close")[0];
+
+    span.onclick = function() {
+        modal.style.display = "none";
     }
-    function modal(img) {
+}
 
-        var modal = document.getElementById("modalImage");
-        var modalImg = document.getElementById("imagen-modal");
-        var captionText = document.getElementById("caption");
+function subirImagenMod(id, file){
+    const formData  = new FormData();
 
-        modal.style.display = "block";
-        modalImg.src = img.src;
-        captionText.innerHTML = img.alt;
+    formData.append("imagen", file);
 
-        var span = document.getElementsByClassName("close")[0];
+    fetch('http://localhost:8080/app/productos/subir-imagen/'+id, {
+        method: 'POST',
+        body:formData
+    })
+        .then(response => response.text())
+        .then(result => {
+            showAlertModal("Imagen modificada correctamente", 'success', "Productos", true);
+            console.log(result);
 
-        span.onclick = function() {
-            modal.style.display = "none";
-        }
-    }
+            setTimeout(function() {
+                loadContent('modulos/productos.html');
 
-    function subirImagenMod(id, file){
-        const formData  = new FormData();
+                // const backdrop = document.querySelector('.modal-backdrop');
 
-        formData.append("imagen", file);
-
-        fetch('http://localhost:8080/app/productos/subir-imagen/'+id, {
-            method: 'POST',
-            body:formData
+            }, 2000); // 3000 milisegundos = 3 segundos
         })
-            .then(response => response.text())
-            .then(result => {
-                showAlertModal("Imagen modificada correctamente", 'success', "Productos", true);
-                console.log(result);
-
-                setTimeout(function() {
-                    loadContent('modulos/productos.html');
-
-                    // const backdrop = document.querySelector('.modal-backdrop');
-
-                }, 2000); // 3000 milisegundos = 3 segundos
-            })
-            .catch(error =>
-            {
-                console.error('Error:', error);
-                console.log('Error al modificar la imagen');
-            });
-    }
+        .catch(error =>
+        {
+            console.error('Error:', error);
+            console.log('Error al modificar la imagen');
+        });
+}
